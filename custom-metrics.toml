@@ -1,0 +1,31 @@
+# db metrics
+[[metric]]
+context = "custom_conn"
+request = "select count(*) as active_counter from v$session where status = 'ACTIVE'"
+metricsdesc = { active_counter= "Gauge metric for number of active DB connections." }
+
+[[metric]]
+context = "custom_iops"
+request = "select metric_name, avg(AVERAGE) as read from dba_hist_sysmetric_summary where metric_name in ('Physical Read Total IO Requests Per Sec') group by metric_name"
+metricsdesc = { read= "Gauge metric for database Read IOPS." }
+
+[[metric]]
+context = "custom_iops"
+request = "select metric_name, avg(AVERAGE) as write from dba_hist_sysmetric_summary where metric_name in ('Physical Write Total IO Requests Per Sec') group by metric_name"
+metricsdesc = { write= "Gauge metric for database Write IOPS." }
+
+# host level metrics
+[[metric]]
+context = "custom_cpu"
+request = "select metric_name, value as utilization_percent from v$sysmetric where metric_name='Host CPU Utilization (%)'"
+metricsdesc = { utilization_percent= "Gauge metric for percentage CPU utilization on DB host." }
+
+[[metric]]
+context = "custom_cpu"
+request = "select metric_name, value as usage_per_sec from v$sysmetric where metric_name='Host CPU Usage Per Sec'"
+metricsdesc = { usage_per_sec= "Gauge metric for CPU usage per second on DB host." }
+
+[[metric]]
+context = "custom_network"
+request = "select metric_name, value as traffic_per_sec from v$sysmetric where metric_name='Network Traffic Volume Per Sec'"
+metricsdesc = { traffic_per_sec= "Gauge metric for network traffic volume per second on DB host." }

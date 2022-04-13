@@ -33,7 +33,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 COPY oracle-instantclient*${ORACLE_VERSION}*basic*.rpm /
 
 RUN apt-get -qq update && \
-  apt-get -qq install --no-install-recommends tzdata libaio1 rpm -y && rpm -Uvh --nodeps /oracle*${ORACLE_VERSION}*rpm && \
+  apt-get -qq install --no-install-recommends tzdata libaio1 rpm curl golang jq htop -y && rpm -Uvh --nodeps /oracle*${ORACLE_VERSION}*rpm && \
     rm -f /oracle*rpm
 
 RUN adduser --system --uid 1000 --group appuser \
@@ -55,4 +55,6 @@ EXPOSE 9161
 
 USER appuser
 
-ENTRYPOINT ["/oracledb_exporter"]
+COPY custom-metrics.toml /
+
+ENTRYPOINT ["/oracledb_exporter", "--custom.metrics", "/custom-metrics.toml", "--log.level", "debug"]

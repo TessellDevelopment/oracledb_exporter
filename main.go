@@ -5,11 +5,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"hash"
 	"io"
 	"net/http"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,8 +27,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 	"gopkg.in/alecthomas/kingpin.v2"
+
 	//Required for debugging
-	//_ "net/http/pprof"
+	_ "net/http/pprof"
 )
 
 var (
@@ -579,6 +582,20 @@ func reloadMetrics() {
 	}
 }
 
+func gcHandler(w http.ResponseWriter, r *http.Request) {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	gcJSON, err := json.Marshal(m)
+	if err != nil {
+		log.Errorln(err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(gcJSON)
+
+	log.Infoln("GC stats: ", string(gcJSON))
+}
+
 func main() {
 	log.AddFlags(kingpin.CommandLine)
 	kingpin.Version("oracledb_exporter " + Version)
@@ -606,6 +623,8 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("<html><head><title>Oracle DB Exporter " + Version + "</title></head><body><h1>Oracle DB Exporter " + Version + "</h1><p><a href='" + *metricPath + "'>Metrics</a></p></body></html>"))
 	})
+
+	http.HandleFunc("/debug/gc", gcHandler)
 
 	if *securedMetrics {
 		if _, err := os.Stat(*serverCert); err != nil {
